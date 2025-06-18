@@ -1,0 +1,23 @@
+# Ignore virtual environment
+venv/
+.venv/
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore environment variables
+.env
+
+# Ignore JSON data files (e.g., jobs_seen.json, subscriptions.json)
+*.json
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore logs
+*.log
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
