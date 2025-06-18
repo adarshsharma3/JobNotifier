@@ -54,14 +54,10 @@ Create your .env file
 SUP_USER=your_superset_email@example.com
 SUP_PASS=your_superset_password
 TELEGRAM_TOKEN=your_telegram_bot_token
-
-
-You can find your chat_id by sending a message to your bot and calling:
+TELEGRAM_CHAT_ID=You can find your chat_id by sending a message to your bot and calling:
 
 https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
 (bot token can be get using fatherbot)
-
-Also get your chat id on which you want the message to be sent . 
 
 Run the bot
 
