@@ -38,6 +38,7 @@ jobs:
         with:
           name: jobs_seen
           path: .
+          if-no-files-found: ignore
 
       - name: 🚀 Run notifier script
         env:
