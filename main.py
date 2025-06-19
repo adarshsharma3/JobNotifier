@@ -55,17 +55,27 @@ def load_seen():
         return set(json.load(f))
 
 # Initialize Chrome
+# def init_driver():
+#     chrome_options = Options()
+#     chrome_options.add_argument("--headless")  # No browser GUI
+#     chrome_options.add_argument("--no-sandbox")
+#     chrome_options.add_argument("--disable-dev-shm-usage")
+#     chrome_options.add_argument("--disable-gpu")
+#     chrome_options.add_argument("--window-size=1920,1080")
+
+#     service = Service("/usr/local/bin/chromedriver")  # 👈 wrap the driver path in Service
+
+#     driver = webdriver.Chrome(service=service, options=chrome_options)
+#     return driver
+
 def init_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # No browser GUI
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_opts = Options()
+    chrome_opts.add_argument("--headless=new")
+    chrome_opts.add_argument("--no-sandbox")
+    chrome_opts.add_argument("--disable-dev-shm-usage")
 
-    service = Service("/usr/local/bin/chromedriver")  # 👈 wrap the driver path in Service
-
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    # 👉 No Service(...) argument at all
+    driver = webdriver.Chrome(options=chrome_opts)
     return driver
 
 # Login and fetch jobs
