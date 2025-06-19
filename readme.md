@@ -4,6 +4,12 @@ A Python-based bot that scrapes job listings from [Superset](https://app.joinsup
 
 ---
 
+📢 Telegram Notifications
+
+All new jobs are posted to the Telegram chat.
+
+👉 Find the Telegram link here: https://t.me/+UTwcHbdfMJE5NzE9
+
 ## 🚀 Features
 
 - Scrapes jobs from your Superset student login.
