@@ -2,7 +2,7 @@ name: Superset Notifier
 
 on:
   schedule:
-    - cron: "* * * * *"  # Runs every 4 hours
+    - cron: "0 */4 * * *"  # Runs every 4 hours
   workflow_dispatch:       # Optional: allows manual trigger
 
 jobs:
