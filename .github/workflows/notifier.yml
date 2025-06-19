@@ -34,12 +34,11 @@ jobs:
           sudo chmod +x /usr/local/bin/chromedriver
 
       - name: ⬇️ Download previous jobs_seen.json (optional)
-  continue-on-error: true
-  uses: actions/download-artifact@v4
-  with:
-    name: jobs_seen
-    path: .
-
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: jobs_seen
+          path: .
 
       - name: 🚀 Run notifier script
         env:
@@ -52,5 +51,5 @@ jobs:
       - name: ⬆️ Upload updated jobs_seen.json
         uses: actions/upload-artifact@v4
         with:
-          name: jobs-seen
+          name: jobs_seen
           path: jobs_seen.json
