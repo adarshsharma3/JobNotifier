@@ -1,2 +1,0 @@
-/bin/sh: 1: /path/to/your/venv/bin/python3: not found
-/bin/sh: 1: /path/to/your/venv/bin/python3: not found
