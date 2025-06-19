@@ -38,13 +38,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: jobs_seen.json
-          key: jobs-seen-cache
-
-      - name: 📄 Create empty jobs_seen.json if not exists
-        run: |
-          if [ ! -f jobs_seen.json ]; then
-            echo "[]" > jobs_seen.json
-          fi
+          key: jobs-seen-cache-latest
+          restore-keys: |
+            jobs-seen-cache-
 
       - name: 🚀 Run notifier script
         env:
@@ -58,4 +54,4 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: jobs_seen.json
-          key: jobs-seen-cache
+          key: jobs-seen-cache-${{ github.run_id }}
