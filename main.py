@@ -5,7 +5,7 @@ import json
 import re
 import asyncio
 import telegram
-
+import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -78,16 +78,22 @@ def init_driver():
 
 
 # 🧲 Scrape jobs
+
+
+def clean_dynamic_text(text: str) -> str:
+    # Removes time-relative phrases like "· 8 hours ago", "· a day ago", etc.
+    return re.sub(r"\u00b7\s+(?:\d+\s+\w+\s+ago|a\s+\w+\s+ago)", "", text).strip()
+
 def fetch_jobs():
     driver = init_driver()
     driver.get(LOGIN_URL)
     time.sleep(3)
 
+    # Log in
     driver.find_element(By.CSS_SELECTOR, "input[type='email']").send_keys(USERNAME)
     pwd = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
     pwd.send_keys(PASSWORD)
     pwd.send_keys(Keys.RETURN)
-
     time.sleep(5)
 
     cards = driver.find_elements(By.CSS_SELECTOR, "div.MuiBox-root.css-mfpd05")
@@ -96,15 +102,19 @@ def fetch_jobs():
     for card in cards:
         try:
             title_el = card.find_element(By.CSS_SELECTOR, ".flex.gap-4.items-center")
-            content_el = card.find_element(By.CSS_SELECTOR,
-                                           ".m-0.sm\\:m-3.lg\\:mt-4.lg\\:mr-16.lg\\:mb-5.lg\\:ml-14")
-
             title = title_el.text.strip()
+
+            content_el = card.find_element(
+                By.CSS_SELECTOR,
+                ".m-0.sm\\:m-3.lg\\:mt-4.lg\\:mr-16.lg\\:mb-5.lg\\:ml-14",
+            )
             content = content_el.text.strip()
 
-            if title and content:
-                # Store raw, clean text without Markdown
-                job_texts.append(normalize(f"{title}\n{content}"))
+            full_text = f"{title}\n{content}"
+            cleaned_text = clean_dynamic_text(full_text)
+
+            if cleaned_text:
+                job_texts.append(cleaned_text)
         except Exception:
             continue
 
