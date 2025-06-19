@@ -9,7 +9,7 @@ __pycache__/
 # Ignore environment variables
 .env
 
-
+*.json
 # Ignore VS Code settings
 .vscode/
 
