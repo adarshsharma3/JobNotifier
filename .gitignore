@@ -6,6 +6,7 @@ venv/
 __pycache__/
 *.py[cod]
 
+jobs_seen.json
 # Ignore environment variables
 .env
 *.json
