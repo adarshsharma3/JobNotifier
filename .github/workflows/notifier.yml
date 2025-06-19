@@ -33,12 +33,13 @@ jobs:
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
 
-      - name: ⬇️ Download previous jobs_seen.json
-        uses: actions/download-artifact@v4
-        with:
-          name: jobs_seen
-          path: .
-          if-no-files-found: ignore
+      - name: ⬇️ Download previous jobs_seen.json (optional)
+  continue-on-error: true
+  uses: actions/download-artifact@v4
+  with:
+    name: jobs_seen
+    path: .
+
 
       - name: 🚀 Run notifier script
         env:
