@@ -8,14 +8,14 @@ __pycache__/
 
 # Ignore environment variables
 .env
-
 *.json
+
 # Ignore VS Code settings
 .vscode/
 
 # Ignore logs
 *.log
-*.json
+
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
