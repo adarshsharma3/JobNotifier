@@ -26,14 +26,18 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # https://app.joinsuperset.com/students
 LOGIN_URL = "https://app.joinsuperset.com/students/login"
-
+HOME="https://app.joinsuperset.com/students"
 DATA_FILE = "jobs_seen.json"
 # ================
 
 
 async def _send_async(message: str) -> None:
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+    await bot.send_message(
+        chat_id=TELEGRAM_CHAT_ID,
+        text=message,
+        parse_mode="Markdown"  # 👈 Enables bold, italics, etc.
+    )
 
 def notify_telegram(message: str) -> None:
     """
@@ -51,8 +55,14 @@ def save_seen(jobs):
 def load_seen():
     if not os.path.exists(DATA_FILE):
         return set()
-    with open(DATA_FILE, "r") as f:
-        return set(json.load(f))
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = f.read().strip()
+            if not data:
+                return set()
+            return set(json.loads(data))
+    except json.JSONDecodeError:
+        return set()
 
 # Initialize Chrome
 # def init_driver():
@@ -79,35 +89,46 @@ def init_driver():
     return driver
 
 # Login and fetch jobs
+
 def fetch_jobs():
     driver = init_driver()
     driver.get(LOGIN_URL)
     time.sleep(3)
 
-    # Enter email and password
-    email_field = driver.find_element(By.CSS_SELECTOR, "input[type='email']")
-    password_field = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
-    email_field.send_keys(USERNAME)
-    password_field.send_keys(PASSWORD)
-    password_field.send_keys(Keys.RETURN)
+    # Log in
+    driver.find_element(By.CSS_SELECTOR, "input[type='email']").send_keys(USERNAME)
+    pwd = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
+    pwd.send_keys(PASSWORD)
+    pwd.send_keys(Keys.RETURN)
+    time.sleep(5)
 
-    time.sleep(5)  # wait for dashboard
+    cards = driver.find_elements(By.CSS_SELECTOR, "div.MuiBox-root.css-mfpd05")
+    job_texts = []
 
-    # Get job cards
-    jobs = driver.find_elements(By.CSS_SELECTOR, "div.MuiBox-root.css-mfpd05")
-
-    job_titles = []
-    for job in jobs:
+    for card in cards:
         try:
-            title = job.text.strip()
-            if title:
-                job_titles.append(title)
-        except:
+            # 1️⃣  Title element
+            title_el = card.find_element(
+                By.CSS_SELECTOR, ".flex.gap-4.items-center"
+            )
+            title = title_el.text.strip()
+
+            # 2️⃣  Content element
+            content_el = card.find_element(
+                By.CSS_SELECTOR,
+                ".m-0.sm\\:m-3.lg\\:mt-4.lg\\:mr-16.lg\\:mb-5.lg\\:ml-14",
+            )
+            content = content_el.text.strip()
+
+            if title and content:
+                job_texts.append(f"**{title}**\n{content}")  # Markdown‑style title
+        except Exception:
             continue
 
     driver.quit()
-    return job_titles
+    return job_texts
 
+# Main logic
 # Main logic
 def main():
     seen_jobs = load_seen()
@@ -116,11 +137,13 @@ def main():
     new_jobs = current_jobs - seen_jobs
     if new_jobs:
         for job in new_jobs:
-            notify_telegram(f"🆕 New job posted:\n\n{job}")
+            notify_telegram(
+                f"🆕 New job posted:\n\n{job}\n\nFind more details here 👉 {HOME}"
+            )
         save_seen(list(current_jobs))
     else:
-        notify_telegram(f"Nothing new here ")
-        print("No new jobs.")
+        notify_telegram("Nothing new here 🙂")
+
 
 
 if __name__ == "__main__":
