@@ -9,8 +9,6 @@ __pycache__/
 # Ignore environment variables
 .env
 
-# Ignore JSON data files (e.g., jobs_seen.json, subscriptions.json)
-*.json
 
 # Ignore VS Code settings
 .vscode/
