@@ -1,63 +1,84 @@
 #!/usr/bin/env python3
 import os
-import json
 import time
+import json
+import re
 import asyncio
-from pathlib import Path
+import telegram
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-import telegram
 from dotenv import load_dotenv
 
-# ── ENV ──────────────────────────────────────────────────────────────
+# Load environment variables from .env
 load_dotenv()
 
-USERNAME        = os.getenv("SUP_USER")
-PASSWORD        = os.getenv("SUP_PASS")
-TELEGRAM_TOKEN  = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHATID = os.getenv("TELEGRAM_CHAT_ID")
+USERNAME = os.getenv("SUP_USER")
+PASSWORD = os.getenv("SUP_PASS")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
+# URLs and file path
 LOGIN_URL = "https://app.joinsuperset.com/students/login"
-HOME_URL  = "https://app.joinsuperset.com/students"
-DATA_FILE = Path("jobs_seen.json")
+HOME_URL = "https://app.joinsuperset.com/students"
+DATA_FILE = "jobs_seen.json"
 
-# ── TELEGRAM HELPERS ────────────────────────────────────────────────
-async def _send_async(msg: str) -> None:
+
+# 📬 Telegram send message (async)
+async def _send_async(message: str) -> None:
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    await bot.send_message(chat_id=TELEGRAM_CHATID, text=msg, parse_mode="Markdown")
+    await bot.send_message(
+        chat_id=TELEGRAM_CHAT_ID,
+        text=message,
+        parse_mode="Markdown"
+    )
 
-def notify(msg: str) -> None:
-    asyncio.run(_send_async(msg))
 
-# ── LOAD / SAVE SEEN TITLES ─────────────────────────────────────────
-def load_seen_titles() -> set[str]:
-    if not DATA_FILE.exists():
+# 🚀 Synchronous wrapper for Telegram
+def notify_telegram(message: str) -> None:
+    asyncio.run(_send_async(message))
+
+
+# 🧼 Normalize job text
+def normalize(text: str) -> str:
+    text = text.strip()
+    text = re.sub(r"\s+", " ", text)  # Replace all whitespace (newline, tabs, etc.) with single space
+    return text
+
+
+# 💾 Save seen jobs
+def save_seen(jobs):
+    with open(DATA_FILE, "w") as f:
+        json.dump(sorted(list(jobs)), f)
+
+
+# 📖 Load seen jobs
+def load_seen():
+    if not os.path.exists(DATA_FILE):
         return set()
     try:
-        raw = DATA_FILE.read_text().strip()
-        return set(json.loads(raw)) if raw else set()
+        with open(DATA_FILE, "r") as f:
+            data = f.read().strip()
+            if not data:
+                return set()
+            return set(normalize(job) for job in json.loads(data))
     except json.JSONDecodeError:
         return set()
 
-def save_seen_titles(titles: set[str]) -> None:
-    DATA_FILE.write_text(json.dumps(list(titles), indent=2))
 
-# ── SELENIUM DRIVER ────────────────────────────────────────────────
-def init_driver() -> webdriver.Chrome:
-    opts = Options()
-    opts.add_argument("--headless=new")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    # Selenium ≥ 4.6 will auto‑manage chromedriver
-    return webdriver.Chrome(options=opts)
+# 🧭 Setup headless Chrome
+def init_driver():
+    chrome_opts = Options()
+    chrome_opts.add_argument("--headless=new")
+    chrome_opts.add_argument("--no-sandbox")
+    chrome_opts.add_argument("--disable-dev-shm-usage")
+    return webdriver.Chrome(options=chrome_opts)
 
-# ── SCRAPER ─────────────────────────────────────────────────────────
-def fetch_jobs() -> list[dict]:
-    """
-    Returns a list of dicts: [{"title": "...", "content": "..."}]
-    """
+
+# 🧲 Scrape jobs
+def fetch_jobs():
     driver = init_driver()
     driver.get(LOGIN_URL)
     time.sleep(3)
@@ -66,50 +87,48 @@ def fetch_jobs() -> list[dict]:
     pwd = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
     pwd.send_keys(PASSWORD)
     pwd.send_keys(Keys.RETURN)
+
     time.sleep(5)
 
     cards = driver.find_elements(By.CSS_SELECTOR, "div.MuiBox-root.css-mfpd05")
-    jobs: list[dict] = []
+    job_texts = []
 
     for card in cards:
         try:
-            title = card.find_element(By.CSS_SELECTOR,
-                     ".flex.gap-4.items-center").text.strip()
+            title_el = card.find_element(By.CSS_SELECTOR, ".flex.gap-4.items-center")
+            content_el = card.find_element(By.CSS_SELECTOR,
+                                           ".m-0.sm\\:m-3.lg\\:mt-4.lg\\:mr-16.lg\\:mb-5.lg\\:ml-14")
 
-            content = card.find_element(
-                     By.CSS_SELECTOR,
-                     ".m-0.sm\\:m-3.lg\\:mt-4.lg\\:mr-16.lg\\:mb-5.lg\\:ml-14"
-                     ).text.strip()
+            title = title_el.text.strip()
+            content = content_el.text.strip()
 
             if title and content:
-                jobs.append({"title": title, "content": content})
+                # Store raw, clean text without Markdown
+                job_texts.append(normalize(f"{title}\n{content}"))
         except Exception:
-            continue   # skip card if selector not found
+            continue
 
     driver.quit()
-    return jobs
+    return job_texts
 
-# ── MAIN ────────────────────────────────────────────────────────────
-def main() -> None:
-    seen_titles   = load_seen_titles()
-    fetched_jobs  = fetch_jobs()
-    current_titles = {job["title"] for job in fetched_jobs}
 
-    new_titles = current_titles - seen_titles
+# 🧠 Main logic
+def main():
+    seen_jobs = load_seen()
+    current_jobs_raw = fetch_jobs()
+    current_jobs = set(normalize(job) for job in current_jobs_raw)
 
-    if new_titles:
-        for job in fetched_jobs:
-            if job["title"] in new_titles:
-                message = (
-                    f"🆕 *New job posted*\n\n"
-                    f"*{job['title']}*\n{job['content']}\n\n"
-                    f"[Find more details here]({HOME_URL})"
-                )
-                notify(message)
-        # update stored titles
-        save_seen_titles(current_titles)
+    new_jobs = current_jobs - seen_jobs
+
+    if new_jobs:
+        for job in new_jobs:
+            notify_telegram(
+                f"🆕 New job posted:\n\n{job}\n\nFind more details here 👉 {HOME_URL}"
+            )
+        save_seen(current_jobs)
     else:
-        notify("Nothing new here 🙂")
+        notify_telegram("Nothing new here 🙂")
+
 
 if __name__ == "__main__":
     main()
