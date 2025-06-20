@@ -2,8 +2,8 @@ name: Superset Notifier
 
 on:
   schedule:
-    - cron: "0 */4 * * *"  # Runs every 4 hours
-  workflow_dispatch:       # Optional: allows manual trigger
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
 
 jobs:
   run-notifier:
@@ -23,22 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r Requirements.txt
 
-      # - name: 🌐 Install Chrome & ChromeDriver
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y wget unzip google-chrome-stable
-      #     CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9.]+' | head -1)
-      #     wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
-      #     unzip chromedriver-linux64.zip
-      #     sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
-      #     sudo chmod +x /usr/local/bin/chromedriver
-
       - name: 💾 Restore jobs_seen.json cache
         id: cache-jobs
         uses: actions/cache@v3
         with:
           path: jobs_seen.json
-          key: jobs-seen-cache-dummy
+          key: jobs-seen-cache-${{ github.run_id }}  # Unique for every run
           restore-keys: |
             jobs-seen-cache-
 
@@ -50,8 +40,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python main.py
 
-      - name: 💽 Save updated jobs_seen.json
+      - name: 💽 Save updated jobs_seen.json cache
         uses: actions/cache/save@v3
         with:
           path: jobs_seen.json
-          key: jobs-seen-cache-${{ github.run_id }}
+          key: jobs-seen-cache-${{ github.run_id }}  # Same dynamic key
