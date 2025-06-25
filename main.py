@@ -5,12 +5,14 @@ import json
 import re
 import asyncio
 import telegram
-import re
+from telegram.helpers import escape_markdown
+from telegram.constants import ParseMode
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from dotenv import load_dotenv
+import html
 
 # Load environment variables from .env
 load_dotenv()
@@ -29,10 +31,11 @@ DATA_FILE = "jobs_seen.json"
 # 📬 Telegram send message (async)
 async def _send_async(message: str) -> None:
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    escaped_message = escape_markdown(message, version=2)
     await bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
-        text=message,
-        parse_mode="Markdown"
+        text=escaped_message,
+        parse_mode=ParseMode.MARKDOWN_V2
     )
 
 
@@ -78,8 +81,6 @@ def init_driver():
 
 
 # 🧲 Scrape jobs
-
-
 def clean_dynamic_text(text: str) -> str:
     # Removes time-relative phrases like "· 8 hours ago", "· a day ago", etc.
     return re.sub(r"\u00b7\s+(?:\d+\s+\w+\s+ago|a\s+\w+\s+ago)", "", text).strip()
