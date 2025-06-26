@@ -47,8 +47,10 @@ def notify_telegram(message: str) -> None:
 # 🧼 Normalize job text
 def normalize(text: str) -> str:
     text = text.strip()
-    text = re.sub(r"\s+", " ", text)  # Replace all whitespace (newline, tabs, etc.) with single space
+    text = re.sub(r"\s+", " ", text)  # Normalize whitespace
+    text = re.sub(r"\.*$", "", text)  # Remove trailing periods
     return text
+
 
 
 # 💾 Save seen jobs
@@ -82,8 +84,15 @@ def init_driver():
 
 # 🧲 Scrape jobs
 def clean_dynamic_text(text: str) -> str:
-    # Removes time-relative phrases like "· 8 hours ago", "· a day ago", etc.
-    return re.sub(r"\u00b7\s+(?:\d+\s+\w+\s+ago|a\s+\w+\s+ago)", "", text).strip()
+    # Removes dynamic time phrases like:
+    # · just now, · an hour ago, · a day ago, · 8 hours ago, · 7 days ago, etc.
+    return re.sub(
+        r"\s*·\s*(?:just now|\d+\s+\w+\s+ago|a[n]?\s+\w+\s+ago)",
+        "",
+        text,
+        flags=re.IGNORECASE
+    ).strip()
+
 
 def fetch_jobs():
     driver = init_driver()
