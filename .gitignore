@@ -2,6 +2,7 @@
 venv/
 .venv/
 *.txt
+app.py
 # Ignore Python bytecode
 __pycache__/
 *.py[cod]
